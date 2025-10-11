@@ -1,0 +1,6 @@
+[submodule "DataLog"]
+	path = DataLog
+	url = ./DataLog
+[submodule "DataPools"]
+	path = DataPools
+	url = ./DataPools
