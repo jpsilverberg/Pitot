@@ -1,0 +1,10 @@
+{
+   "files.associations": {
+      "*.mdc": "markdown",
+      "*.mdcx": "markdown",
+      "string": "cpp",
+      "iosfwd": "cpp",
+      "random": "cpp",
+      "fstream": "cpp"
+   }
+}
