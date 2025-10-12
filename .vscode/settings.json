@@ -89,6 +89,8 @@
       "climits": "cpp",
       "__debug": "cpp",
       "__errc": "cpp",
-      "stack": "cpp"
+      "stack": "cpp",
+      "__locale": "cpp",
+      "version": "cpp"
    }
 }
