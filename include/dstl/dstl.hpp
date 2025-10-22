@@ -4,5 +4,6 @@
 // Master header that includes all DSTL components
 
 // Logging
-#include "dlog.h"
+#include "dlog.hpp"
 #include "dpools.hpp"
+#include "dmutex.hpp"
