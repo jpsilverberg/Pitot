@@ -40,6 +40,7 @@ macro(maybe_add_subdirectory subdir)
 endmacro()
 
 maybe_add_subdirectory(DataLog)
+maybe_add_subdirectory(DataMutex)
 maybe_add_subdirectory(DataPools)
 
 # Optional: Add tests and examples directories
