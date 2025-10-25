@@ -91,6 +91,10 @@
       "__errc": "cpp",
       "stack": "cpp",
       "__locale": "cpp",
-      "version": "cpp"
-   }
+      "version": "cpp",
+      "forward_list": "cpp",
+      "unordered_set": "cpp",
+      "future": "cpp"
+   },
+   "sonarlint.pathToCompileCommands": "${workspaceFolder}/build/compile_commands.json"
 }
