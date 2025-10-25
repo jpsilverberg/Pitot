@@ -22,6 +22,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # Add include directories for DSTL
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
 # Enable testing if needed
 option(BUILD_TESTING "Build tests" ON)
@@ -43,30 +45,61 @@ maybe_add_subdirectory(DataMutex)
 maybe_add_subdirectory(DataLog)
 maybe_add_subdirectory(DataPools)
 
-# Optional: Add tests and examples directories
-# if(BUILD_TESTING)
-#   add_subdirectory(tests)
-# endif()
-# add_subdirectory(examples)
+install(DIRECTORY include/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
 
-# Installation rules (for headers, libraries, and CMake config)
-# include(GNUInstallDirs)
-# install(EXPORT MyProjectTargets
-#   FILE MyProjectTargets.cmake
-#   NAMESPACE MyProject::
-#   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/MyProject
-# )
+install(DIRECTORY DataPools
+  DESTINATION .
+  PATTERN "Tests" EXCLUDE
+  PATTERN "build" EXCLUDE
+  PATTERN ".git" EXCLUDE
+  PATTERN "CMakeLists.txt" EXCLUDE
+)
 
-# # Generate and install a CMake package configuration file
-# include(CMakePackageConfigHelpers)
-# write_basic_package_version_file(
-#   "${CMAKE_BINARY_DIR}/MyProjectConfigVersion.cmake"
-#   VERSION ${PROJECT_VERSION}
-#   COMPATIBILITY SameMajorVersion
-# )
+install(DIRECTORY DataLog
+  DESTINATION .
+  PATTERN "Tests" EXCLUDE
+  PATTERN "build" EXCLUDE
+  PATTERN ".git" EXCLUDE
+  PATTERN "CMakeLists.txt" EXCLUDE
+)
 
-# install(FILES
-#   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/MyProjectConfig.cmake"
-#   "${CMAKE_BINARY_DIR}/MyProjectConfigVersion.cmake"
-#   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/MyProject
-# )
+install(DIRECTORY DataMutex
+  DESTINATION .
+  PATTERN "Tests" EXCLUDE
+  PATTERN "build" EXCLUDE
+  PATTERN ".git" EXCLUDE
+  PATTERN "CMakeLists.txt" EXCLUDE
+)
+
+set(DSTL_CONFIG_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/DSTL)
+
+configure_package_config_file(
+  cmake/DSTLConfig.cmake.in
+  "${CMAKE_CURRENT_BINARY_DIR}/DSTLConfig.cmake"
+  INSTALL_DESTINATION ${DSTL_CONFIG_INSTALL_DIR}
+)
+
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/DSTLConfigVersion.cmake"
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion
+)
+
+install(EXPORT DSTLTargets
+  FILE DSTLTargets.cmake
+  NAMESPACE dstl::
+  DESTINATION ${DSTL_CONFIG_INSTALL_DIR}
+)
+
+export(EXPORT DSTLTargets
+  FILE "${CMAKE_CURRENT_BINARY_DIR}/DSTLTargets.cmake"
+  NAMESPACE dstl::
+)
+
+install(FILES
+  "${CMAKE_CURRENT_BINARY_DIR}/DSTLConfig.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/DSTLConfigVersion.cmake"
+  DESTINATION ${DSTL_CONFIG_INSTALL_DIR}
+)
