@@ -7,3 +7,6 @@
 [submodule "DataMutex"]
 	path = DataMutex
 	url = ./DataMutex
+[submodule "Bits"]
+	path = Bits
+	url = https://github.com/jpsilverberg/Bits.git
