@@ -13,3 +13,6 @@
 [submodule "Numbers"]
 	path = Numbers
 	url = https://github.com/jpsilverberg/Numbers.git
+[submodule "LinAlg"]
+	path = LinAlg
+	url = https://github.com/jpsilverberg/LinAlg.git
