@@ -30,8 +30,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-# Enable testing if needed
-option(BUILD_TESTING "Build tests" ON)
+# Enable testing if needed (default OFF so downstream not slowed by tests)
+option(BUILD_TESTING "Build tests" OFF)
 if(BUILD_TESTING)
   enable_testing()
 endif()

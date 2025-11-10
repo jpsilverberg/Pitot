@@ -12,10 +12,17 @@ cmake -S . -B build -DDSTL_CXX_STANDARD=17 -DDSTL_ENABLE_WARNINGS=ON
 cmake --build build
 cmake --install build --prefix "$HOME/.local"
 ```
+Or rely on the bundled VS Code / CMake presets:
+```bash
+cmake --preset default
+cmake --build --preset default-build
+cmake --build --preset install
+```
 
 `DSTL_CXX_STANDARD` may be set to `14`, `17`, `20`, or `23`. Disable the shared
 warning flags by passing `-DDSTL_ENABLE_WARNINGS=OFF` if you need a quieter
-build.
+build. Tests are now disabled by default; add `-DBUILD_TESTING=ON` if you want
+subproject test targets.
 
 ## Consuming DSTL
 

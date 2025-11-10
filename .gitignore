@@ -1,6 +1,7 @@
 build
 build/
 build/*.*
+install-test/
 
 # Prerequisites
 *.d
