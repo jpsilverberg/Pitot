@@ -1,12 +1,12 @@
-[submodule "DataLog"]
-	path = DataLog
-	url = ./DataLog
+[submodule "Mutex"]
+	path = Mutex
+	url = https://github.com/jpsilverberg/Mutex.git
+[submodule "Logger"]
+	path = Logger
+	url = https://github.com/jpsilverberg/Logger.git
 [submodule "DataPools"]
 	path = DataPools
-	url = ./DataPools
-[submodule "DataMutex"]
-	path = DataMutex
-	url = ./DataMutex
+	url = https://github.com/jpsilverberg/DataPools.git
 [submodule "Bits"]
 	path = Bits
 	url = https://github.com/jpsilverberg/Bits.git
@@ -16,3 +16,6 @@
 [submodule "LinAlg"]
 	path = LinAlg
 	url = https://github.com/jpsilverberg/LinAlg.git
+[submodule "Quadrature"]
+	path = Quadrature
+	url = https://github.com/jpsilverberg/Quadrature.git
