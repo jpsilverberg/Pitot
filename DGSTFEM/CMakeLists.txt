@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-project(Numbers LANGUAGES CXX)
+project(DGSTFEM LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
@@ -22,19 +22,15 @@ get_filename_component(DSTL_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/.." ABSOLUTE)
 
 # When building DGSTFEM standalone ensure Numbers (and its dependencies) exist.
 if(NOT TARGET dstl::numbers)
-  if(EXISTS "${DSTL_ROOT}/DataMutex/CMakeLists.txt" AND EXISTS "${DSTL_ROOT}/DataLog/CMakeLists.txt")
+  if(EXISTS "${DSTL_ROOT}/Numbers/CMakeLists.txt")
     # Store the current BUILD_TESTING state
     set(NUMBERS_BUILD_TESTING ${BUILD_TESTING})
-    
+
     # Temporarily disable testing for dependencies
     set(BUILD_TESTING OFF)
-    
-    if(NOT TARGET dstl::dmutex)
-      add_subdirectory("${DSTL_ROOT}/DataMutex" "${CMAKE_CURRENT_BINARY_DIR}/deps/DataMutex")
-    endif()
-    add_subdirectory("${DSTL_ROOT}/DataLog" "${CMAKE_CURRENT_BINARY_DIR}/deps/DataLog")
+
     add_subdirectory("${DSTL_ROOT}/Numbers" "${CMAKE_CURRENT_BINARY_DIR}/deps/Numbers")
-    
+
     # Restore testing setting for this project
     set(BUILD_TESTING ${NUMBERS_BUILD_TESTING})
   else()
@@ -129,5 +125,5 @@ if(BUILD_TESTING)
   gtest_discover_tests(DG0Tests)
 
 else()
-  message(STATUS "BUILD_TESTING is OFF: skipping DataPools tests")
+  message(STATUS "BUILD_TESTING is OFF: skipping DGSTFEM tests")
 endif()

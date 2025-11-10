@@ -4,10 +4,18 @@ cmake_minimum_required(VERSION 3.12)
 # Project name and version
 project(DSTL VERSION 1.0.0 LANGUAGES CXX)
 
-# Set C++ standard
-set(CMAKE_CXX_STANDARD 11)
+# Project-wide build knobs so every component shares the same defaults.
+set(DSTL_CXX_STANDARD 17 CACHE STRING "C++ standard used when building DSTL")
+set_property(CACHE DSTL_CXX_STANDARD PROPERTY STRINGS 14 17 20 23)
+
+option(DSTL_ENABLE_WARNINGS "Enable common warning flags for every DSTL target" ON)
+
+set(CMAKE_CXX_STANDARD ${DSTL_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+if(DSTL_ENABLE_WARNINGS)
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
 # Default to a sensible build type for single-configuration generators
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -18,9 +26,6 @@ endif()
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-# Add include directories for DSTL
-include_directories(${CMAKE_SOURCE_DIR}/include)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -41,11 +46,34 @@ macro(maybe_add_subdirectory subdir)
   endif()
 endmacro()
 
-maybe_add_subdirectory(DataMutex)
-maybe_add_subdirectory(DataLog)
-maybe_add_subdirectory(DataPools)
+set(DSTL_COMPONENT_DIRS
+  Mutex
+  Logger
+  DataPools
+  Numbers
+  LinAlg
+  Quadrature
+  DGSTFEM
+)
+
+foreach(component ${DSTL_COMPONENT_DIRS})
+  maybe_add_subdirectory(${component})
+endforeach()
+
+add_library(dstl INTERFACE)
+target_include_directories(dstl
+  INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/Bits/include>
+    $<INSTALL_INTERFACE:include>
+)
+target_compile_features(dstl INTERFACE cxx_std_${DSTL_CXX_STANDARD})
 
 install(DIRECTORY include/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(DIRECTORY Bits/include/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
@@ -57,7 +85,7 @@ install(DIRECTORY DataPools
   PATTERN "CMakeLists.txt" EXCLUDE
 )
 
-install(DIRECTORY DataLog
+install(DIRECTORY Logger
   DESTINATION .
   PATTERN "Tests" EXCLUDE
   PATTERN "build" EXCLUDE
@@ -65,7 +93,7 @@ install(DIRECTORY DataLog
   PATTERN "CMakeLists.txt" EXCLUDE
 )
 
-install(DIRECTORY DataMutex
+install(DIRECTORY Mutex
   DESTINATION .
   PATTERN "Tests" EXCLUDE
   PATTERN "build" EXCLUDE
@@ -85,6 +113,10 @@ write_basic_package_version_file(
   "${CMAKE_CURRENT_BINARY_DIR}/DSTLConfigVersion.cmake"
   VERSION ${PROJECT_VERSION}
   COMPATIBILITY SameMajorVersion
+)
+
+install(TARGETS dstl
+  EXPORT DSTLTargets
 )
 
 install(EXPORT DSTLTargets

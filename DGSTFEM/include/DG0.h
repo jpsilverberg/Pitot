@@ -6,8 +6,7 @@
 #include <cassert>
 #include <iostream>
 #include <dstl/dlog.h>
-#include <dstl/math/mat.h>
-#include <dstl/math/vec.h>
+#include <dstl/LinAlg.h>
 
 // -----------------------------------------------------------------------------
 // Header-only demo: Space–Time DG (Burgers) — TWO ELEMENTS, P4xP4 per element
@@ -26,8 +25,8 @@ static constexpr int N1D = P + 1;      // 5
 static constexpr int N = N1D * N1D;    // 25 dofs per element
 
 // Linear algebra micro-types
-using Vec25 = dstl::math::Vec<N, double>;
-using Mat25 = dstl::math::Mat<N, N, double>;
+using Vec25 = dstl::linalg::Vec<N, double>;
+using Mat25 = dstl::linalg::Mat<N, N, double>;
 
 
 inline int idx(int i, int j) { return j * N1D + i; }   // (i in r, j in s)
