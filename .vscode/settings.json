@@ -94,7 +94,8 @@
       "version": "cpp",
       "forward_list": "cpp",
       "unordered_set": "cpp",
-      "future": "cpp"
+      "future": "cpp",
+      "cfenv": "cpp"
    },
    "sonarlint.pathToCompileCommands": "${workspaceFolder}/build/compile_commands.json"
 }

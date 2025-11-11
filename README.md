@@ -21,8 +21,10 @@ cmake --build --preset install
 
 `DSTL_CXX_STANDARD` may be set to `14`, `17`, `20`, or `23`. Disable the shared
 warning flags by passing `-DDSTL_ENABLE_WARNINGS=OFF` if you need a quieter
-build. Tests are now disabled by default; add `-DBUILD_TESTING=ON` if you want
-subproject test targets.
+build. Tests are disabled by default; add `-DBUILD_TESTING=ON` if you need them.
+AddressSanitizer support can be toggled at the top level using
+`-DDSTL_ENABLE_ASAN=ON`, which propagates into submodules that honor
+`ENABLE_ASAN`.
 
 ## Consuming DSTL
 
@@ -63,7 +65,21 @@ For header-only utilities there is also a convenience interface target:
 ```cmake
 target_link_libraries(app PRIVATE dstl)
 ```
-which simply exposes the unified include tree (`include/` and `Bits/include/`).
+which links every `dstl::` component transitively so all module headers are
+available without naming individual targets.
+
+## Available Targets
+
+| Target            | Description                                            |
+|-------------------|--------------------------------------------------------|
+| `dstl`            | Interface shim that re-exports every component target. |
+| `dstl::dmutex`    | Spinlock/mutex primitives from the `Mutex` module.     |
+| `dstl::dlog`      | Logging utilities, depends on `dstl::dmutex`.          |
+| `dstl::dpools`    | Data pool containers (`DataPools` module).             |
+| `dstl::numbers`   | Arbitrary-precision/ratio types (`Numbers`).           |
+| `dstl::linalg`    | Linear algebra helpers (`LinAlg`).                     |
+| `dstl::quadrature`| Quadrature routines (`Quadrature`).                    |
+| `dstl::dg0`       | DG(0) FEM prototype (`DGSTFEM` module, if present).    |
 
 ## Repository Layout
 

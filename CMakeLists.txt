@@ -9,6 +9,7 @@ set(DSTL_CXX_STANDARD 17 CACHE STRING "C++ standard used when building DSTL")
 set_property(CACHE DSTL_CXX_STANDARD PROPERTY STRINGS 14 17 20 23)
 
 option(DSTL_ENABLE_WARNINGS "Enable common warning flags for every DSTL target" ON)
+option(DSTL_ENABLE_ASAN "Propagate AddressSanitizer to DSTL components that support it" OFF)
 
 set(CMAKE_CXX_STANDARD ${DSTL_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -33,6 +34,7 @@ include(CMakePackageConfigHelpers)
 # Enable testing if needed (default OFF so downstream not slowed by tests)
 option(BUILD_TESTING "Build tests" OFF)
 if(BUILD_TESTING)
+  include(CTest)
   enable_testing()
 endif()
 
@@ -56,6 +58,9 @@ set(DSTL_COMPONENT_DIRS
   DGSTFEM
 )
 
+# Ensure downstream options match the root defaults before adding subdirectories.
+set(ENABLE_ASAN ${DSTL_ENABLE_ASAN} CACHE BOOL "Enable AddressSanitizer in DSTL subprojects" FORCE)
+
 foreach(component ${DSTL_COMPONENT_DIRS})
   maybe_add_subdirectory(${component})
 endforeach()
@@ -68,6 +73,22 @@ target_include_directories(dstl
     $<INSTALL_INTERFACE:include>
 )
 target_compile_features(dstl INTERFACE cxx_std_${DSTL_CXX_STANDARD})
+
+set(DSTL_INTERFACE_LINK_TARGETS
+  dstl::dmutex
+  dstl::dlog
+  dstl::dpools
+  dstl::numbers
+  dstl::linalg
+  dstl::quadrature
+  dstl::dg0
+)
+
+foreach(dep ${DSTL_INTERFACE_LINK_TARGETS})
+  if(TARGET ${dep})
+    target_link_libraries(dstl INTERFACE ${dep})
+  endif()
+endforeach()
 
 install(DIRECTORY include/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
@@ -135,3 +156,25 @@ install(FILES
   "${CMAKE_CURRENT_BINARY_DIR}/DSTLConfigVersion.cmake"
   DESTINATION ${DSTL_CONFIG_INSTALL_DIR}
 )
+
+if(BUILD_TESTING)
+  set(DSTL_SMOKE_BINARY_DIR ${CMAKE_BINARY_DIR}/tests/package)
+  add_test(
+    NAME dstl_package_smoke_configure
+    COMMAND ${CMAKE_COMMAND}
+      -S ${CMAKE_SOURCE_DIR}/tests/package
+      -B ${DSTL_SMOKE_BINARY_DIR}
+      -DDSTL_DIR=${CMAKE_BINARY_DIR}
+  )
+
+  add_test(
+    NAME dstl_package_smoke_build
+    COMMAND ${CMAKE_COMMAND} --build ${DSTL_SMOKE_BINARY_DIR}
+  )
+
+  set_tests_properties(
+    dstl_package_smoke_build
+    PROPERTIES
+      DEPENDS dstl_package_smoke_configure
+  )
+endif()
