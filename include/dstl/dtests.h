@@ -8,7 +8,6 @@
 
 #include <dstl/dlog.h>
 #define ISNEAR(a, b) \
-VAR(a);               \
-VAR(b);               \
+VARSEQ(a,b);               \
 ASSERT_NEAR(static_cast<double>(a), static_cast<double>(b), 1.e-6)
 
