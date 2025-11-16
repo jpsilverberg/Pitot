@@ -15,18 +15,18 @@ int main()
   dstl::BitFlag<Flags> flag;
   flag.SetFlag(Flags::One);
 
-  dstl::MultiThreadMutex mutex;
+  dstl::mutex::MultiThreadMutex mutex;
   {
-    dstl::LockGuard<dstl::MultiThreadMutex> guard(mutex);
+    dstl::mutex::LockGuard<dstl::mutex::MultiThreadMutex> guard(mutex);
     (void)guard;
   }
 
-  auto level = dstl::LogLevel::INFO;
+  auto level = dstl::log::LogLevel::INFO;
 
-  dstl::numbers::Float64 scalar{1.0};
+  dstl::num::Float64 scalar{1.0};
   auto params = dstl::quadrature::AdaptParams{};
   (void)scalar;
 
-  const bool ok = flag.HasFlag(Flags::One) && level == dstl::LogLevel::INFO && params.max_depth == 20;
+  const bool ok = flag.HasFlag(Flags::One) && level == dstl::log::LogLevel::INFO && params.max_depth == 20;
   return ok ? 0 : 1;
 }

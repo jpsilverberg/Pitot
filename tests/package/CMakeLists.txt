@@ -9,7 +9,6 @@ find_package(DSTL CONFIG REQUIRED COMPONENTS dmutex dlog)
 add_executable(dstl_package_smoke main.cpp)
 target_link_libraries(dstl_package_smoke
   PRIVATE
-    dstl
     dstl::dmutex
     dstl::dlog
 )
