@@ -6,14 +6,18 @@ find_package(GTest REQUIRED)
 # Test executable
 add_executable(GeodesyTests
     test_geodesy.cpp
+    test_geodesy_reference.cpp
+    test_geodesy_vincenty.cpp
+    test_print_distances.cpp
+    test_debug_failures.cpp
 )
 
 target_link_libraries(GeodesyTests
     PRIVATE
         dstl::Geodesy
-        dstl::LinAlg
-        GTest::GTest
-        GTest::Main
+        dstl::linalg
+        GTest::gtest
+        GTest::gtest_main
 )
 
 # Add test

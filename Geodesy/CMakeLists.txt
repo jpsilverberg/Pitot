@@ -15,7 +15,7 @@ target_include_directories(Geodesy INTERFACE
 )
 
 # Depend on LinAlg
-target_link_libraries(Geodesy INTERFACE dstl::LinAlg)
+target_link_libraries(Geodesy INTERFACE dstl::linalg)
 
 # Installation
 install(TARGETS Geodesy

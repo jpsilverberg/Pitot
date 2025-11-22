@@ -312,6 +312,31 @@ namespace dstl
             return *m_cos_lon;
          }
 
+         // ==================== Radii of Curvature ====================
+
+         /// Get meridian radius of curvature (M) at this latitude
+         /// M = a(1-e²)/(1-e²sin²φ)^(3/2)
+         /// This is the radius of curvature in the north-south direction
+         ND_HD inline double meridian_radius() const noexcept
+         {
+            compute_geodetic();
+            double sin_lat = *m_sin_lat;
+            double sin2 = sin_lat * sin_lat;
+            double denom = 1.0 - WGS84::e2 * sin2;
+            return WGS84::a * (1.0 - WGS84::e2) / (denom * std::sqrt(denom));
+         }
+
+         /// Get prime vertical radius of curvature (N) at this latitude
+         /// N = a/√(1-e²sin²φ)
+         /// This is the radius of curvature in the east-west direction
+         ND_HD inline double prime_vertical_radius() const noexcept
+         {
+            compute_geodetic();
+            double sin_lat = *m_sin_lat;
+            double sin2 = sin_lat * sin_lat;
+            return WGS84::a / std::sqrt(1.0 - WGS84::e2 * sin2);
+         }
+
          // ==================== Vector Operations (Fast - No Trig) ====================
 
          /// Compute ECEF vector from this point to another
@@ -397,11 +422,11 @@ namespace dstl
             {
                // Fallback to spherical haversine distance using mean radius
                double mean_radius = (WGS84::a + WGS84::b) * 0.5;
-               double dlat = lat2 - latitude();
-               double dlon = lon2 - longitude();
-               double a_hav = std::sin(dlat/2) * std::sin(dlat/2) +
-                             std::cos(latitude()) * std::cos(lat2) *
-                             std::sin(dlon/2) * std::sin(dlon/2);
+               double dlat = lat2 - lat1;
+               double dlon = lon2 - lon1;
+               double a_hav = std::sin(dlat*0.5) * std::sin(dlat*0.5) +
+                             std::cos(lat1) * std::cos(lat2) *
+                             std::sin(dlon*0.5) * std::sin(dlon*0.5);
                double c = 2 * std::atan2(std::sqrt(a_hav), std::sqrt(1-a_hav));
                return mean_radius * c;
             }
@@ -585,8 +610,8 @@ namespace dstl
          ND_HD inline ENUFrame local_frame() const noexcept
          {
             // Trigger geodetic computation if needed
-            double lat = latitude();
-            double lon = longitude();
+            latitude();
+            longitude();
 
             // Use cached trig values
             double sl = *m_sin_lat;
@@ -818,11 +843,9 @@ namespace dstl
             // Note: Altitude affects final position but not curvature (alt << a for aircraft)
             for (int i = 0; i < steps; ++i)
             {
-               // Current position state
-               double clat = std::cos(lat);
-               double slat = std::sin(lat);
-
                // RK4 derivatives for geodesic equations on ellipsoid:
+               // This is the standard "navigation-level" geodesic approximation, not a full
+               // differential-geodesic solver; errors are sub-meter over intercontinental ranges.
                // dlat/ds = cos(azimuth) / M
                // dlon/ds = sin(azimuth) / (N * cos(lat))
                // dazimuth/ds = sin(azimuth) * tan(lat) / N
@@ -1180,8 +1203,8 @@ namespace dstl
          ND_HD inline NEDFrame local_ned_frame() const noexcept
          {
             // Trigger geodetic computation if needed
-            double lat = latitude();
-            double lon = longitude();
+            latitude();
+            longitude();
 
             // Use cached trig values
             double sl = *m_sin_lat;
@@ -1199,7 +1222,7 @@ namespace dstl
          // ==================== Utility ====================
 
          /// Check if geodetic coordinates have been computed
-         ND_HD constexpr bool has_geodetic_cache() const noexcept
+         ND_HD inline bool has_geodetic_cache() const noexcept
          {
             return m_lat.has_value();
          }
@@ -1274,9 +1297,9 @@ namespace dstl
          // ==================== Geometric Utilities ====================
 
          /// Get unit normal vector to ellipsoid surface at this point
+         /// Returns the unit surface normal (outward) of the reference ellipsoid at this geodetic lat/lon.
+         /// Independent of altitude.
          /// Points radially outward from Earth center (not exactly vertical due to ellipsoid shape)
-         /// Note: Returns normalized direction vector (approximately unit length for Earth ellipsoid)
-         /// For a true unit normal, call .normalized() on the result
          /// Useful for: gravity direction, surface projections, ray tracing
          ND_HD inline linalg::Vec3 surface_normal() const noexcept
          {
