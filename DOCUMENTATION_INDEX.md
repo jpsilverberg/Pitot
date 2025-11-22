@@ -28,6 +28,7 @@ DSTL is a collection of C++ libraries designed for mathematical and systems prog
 - Fixed-point arithmetic → [Numbers](Numbers/README.md)
 - Linear algebra → [LinAlg](LinAlg/README.md)
 - Numerical integration → [Quadrature](Quadrature/README.md)
+- Geodetic coordinates → [Geodesy](Geodesy/README.md)
 - Utility types → [Bits](Bits/README.md)
 
 ---
@@ -76,6 +77,14 @@ DSTL is a collection of C++ libraries designed for mathematical and systems prog
 - Definite integral approximation
 - Configurable accuracy vs. performance tradeoffs
 - Integration of complex functions
+
+**Geodesy** - Use when you need:
+- WGS84 coordinate transformations
+- ECEF (Earth-Centered, Earth-Fixed) coordinates
+- Geodetic (latitude/longitude/altitude) conversions
+- Fast distance and vector calculations
+- Local ENU (East-North-Up) coordinate frames
+- GPS/navigation applications
 
 **Bits** - Use when you need:
 - Type-safe bit flag operations
@@ -187,6 +196,19 @@ Numerical integration library implementing various quadrature methods for approx
 
 **[View Improvement Notes](Quadrature/IMPROVEMENTS.md)**
 
+#### [Geodesy](Geodesy/README.md)
+High-performance WGS84 geodetic coordinate system with minimal trigonometric operations. Provides ECEF coordinates with lazy geodetic conversion and cached trigonometry.
+
+**Key Features:**
+- ECEF (X, Y, Z) primary storage for fast vector operations
+- Lazy geodetic (lat/lon/alt) computation with caching
+- Cached trigonometric values (sin/cos) for reuse
+- Zero-cost ECEF distance and vector operations
+- Local ENU (East-North-Up) coordinate frames
+- Header-only implementation
+
+**[View Improvement Notes](Geodesy/IMPROVEMENTS.md)**
+
 ---
 
 ## Improvement Notes
@@ -201,6 +223,7 @@ Each component has an associated improvement notes document that identifies pote
 | Numbers | [IMPROVEMENTS.md](Numbers/IMPROVEMENTS.md) |
 | LinAlg | [IMPROVEMENTS.md](LinAlg/IMPROVEMENTS.md) |
 | Quadrature | [IMPROVEMENTS.md](Quadrature/IMPROVEMENTS.md) |
+| Geodesy | [IMPROVEMENTS.md](Geodesy/IMPROVEMENTS.md) |
 | Bits | [IMPROVEMENTS.md](Bits/IMPROVEMENTS.md) |
 
 ---
@@ -238,6 +261,7 @@ target_link_libraries(myapp PRIVATE dstl::dmutex dstl::dpools)
 | `dstl::numbers` | Numbers | Fixed-point arithmetic |
 | `dstl::linalg` | LinAlg | Linear algebra operations |
 | `dstl::quadrature` | Quadrature | Numerical integration |
+| `dstl::Geodesy` | Geodesy | WGS84 coordinate transformations |
 | `dstl` | All | Umbrella target for all components |
 
 ---
