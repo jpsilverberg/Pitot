@@ -10,6 +10,7 @@ add_executable(GeodesyTests
     test_geodesy_vincenty.cpp
     test_geodesy_rk4.cpp
     test_geodesy_complete.cpp
+    test_geodesy_100percent.cpp
     test_print_distances.cpp
     test_debug_failures.cpp
 )
