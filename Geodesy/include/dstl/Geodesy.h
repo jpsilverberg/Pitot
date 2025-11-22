@@ -9,6 +9,9 @@
 #include <sstream>
 #include <iomanip>
 #include <vector>
+#include <ostream>
+#include <type_traits>
+#include <tuple>
 
 #ifndef ND_HD
 #define ND_HD
@@ -48,6 +51,8 @@ namespace dstl
       constexpr double COORDINATE_EPSILON = 1e-6;  // For coordinate equality (1 micron)
       
       // ========================== WGS84 Constants ==========================
+      /// WGS84 ellipsoid parameters
+      /// Reference: NIMA TR8350.2 "Department of Defense World Geodetic System 1984"
       struct WGS84
       {
          static constexpr double a = 6378137.0;           // Semi-major axis (m)
@@ -90,7 +95,7 @@ namespace dstl
          mutable std::optional<double> m_cos_lon;
 
          // Invalidate cache when ECEF changes
-         void invalidate_cache() const
+         void invalidate_cache() const noexcept
          {
             m_lat.reset();
             m_lon.reset();
@@ -101,9 +106,11 @@ namespace dstl
             m_cos_lon.reset();
          }
 
-         // Compute geodetic coordinates using Bowring's method
+         // Compute geodetic coordinates using Bowring's iterative method
+         // Reference: Bowring, B.R. (1976). "Transformation from spatial to geographical coordinates"
          // Converges in 2-3 iterations for most Earth-surface points
-         void compute_geodetic() const
+         // Accuracy: < 1 mm for altitudes < 10,000 km
+         void compute_geodetic() const noexcept
          {
             if (m_lat.has_value())
                return; // Already computed
@@ -324,7 +331,8 @@ namespace dstl
          /// This is the actual surface distance along the ellipsoid.
          /// Accurate for all distances, converges in 1-3 iterations typically.
          /// Note: For near-antipodal points, may fail to converge (returns approximate distance).
-         ND_HD inline double geodesic_distance_to(const ECEFCoordinate &other, int max_iterations = 20) const noexcept
+         /// Reference: Vincenty, T. (1975). "Direct and Inverse Solutions of Geodesics on the Ellipsoid"
+         ND ND_HD inline double geodesic_distance_to(const ECEFCoordinate &other, int max_iterations = 20) const noexcept
          {
             // Get geodetic coordinates (triggers lazy computation if needed)
             double lat1 = latitude();
@@ -383,10 +391,19 @@ namespace dstl
                }
             }
 
-            // Antipodal fallback: if didn't converge, return approximate half-circumference
-            if (!converged && std::abs(sinSigma) < CONVERGENCE_EPSILON)
+            // Antipodal fallback: if didn't converge, use spherical haversine as last resort
+            // This is rare but handles near-antipodal points gracefully
+            if (!converged)
             {
-               return PI * WGS84::a; // Approximate for antipodal points
+               // Fallback to spherical haversine distance using mean radius
+               double mean_radius = (WGS84::a + WGS84::b) * 0.5;
+               double dlat = lat2 - latitude();
+               double dlon = lon2 - longitude();
+               double a_hav = std::sin(dlat/2) * std::sin(dlat/2) +
+                             std::cos(latitude()) * std::cos(lat2) *
+                             std::sin(dlon/2) * std::sin(dlon/2);
+               double c = 2 * std::atan2(std::sqrt(a_hav), std::sqrt(1-a_hav));
+               return mean_radius * c;
             }
 
             double uSq = cosSqAlpha * (WGS84::a * WGS84::a - WGS84::b * WGS84::b) / (WGS84::b * WGS84::b);
@@ -401,7 +418,7 @@ namespace dstl
 
          /// Compute forward azimuth (bearing) to another point (radians from North, 0-2π)
          /// Returns angle in range [0, 2π) where 0 = North, π/2 = East, π = South, 3π/2 = West
-         ND_HD inline double bearing_to(const ECEFCoordinate &other) const noexcept
+         ND ND_HD inline double bearing_to(const ECEFCoordinate &other) const noexcept
          {
             // Use ENU frame for simple, accurate bearing calculation
             auto frame = local_frame();
@@ -420,7 +437,7 @@ namespace dstl
          /// Move along geodesic by distance and bearing (approximate for short distances)
          /// For distances < 100km, this is accurate to ~1m
          /// For longer distances, use iterative Vincenty direct formula
-         ND_HD inline ECEFCoordinate move_by_bearing(double distance_m, double bearing_rad) const noexcept
+         ND ND_HD inline ECEFCoordinate move_by_bearing(double distance_m, double bearing_rad) const noexcept
          {
             // Use local ENU frame for approximate movement
             auto frame = local_frame();
@@ -436,7 +453,7 @@ namespace dstl
          /// Move along geodesic by distance and bearing (accurate Vincenty direct formula)
          /// Accurate for all distances on Earth
          /// Note: Maintains the same altitude as the origin point
-         ND_HD inline ECEFCoordinate move_by_bearing_accurate(double distance_m, double bearing_rad, int max_iterations = 20) const noexcept
+         ND ND_HD inline ECEFCoordinate move_by_bearing_accurate(double distance_m, double bearing_rad, int max_iterations = 20) const noexcept
          {
             double lat1 = latitude();
             double lon1 = longitude();
@@ -602,7 +619,7 @@ namespace dstl
          ///   double ft_to_m = 0.3048;
          ///   Vec3 displacement{100*nm_to_m/sqrt(2), 100*nm_to_m/sqrt(2), -10000*ft_to_m};
          ///   auto new_pos = origin.apply_enu_displacement(displacement);
-         ND_HD inline ECEFCoordinate apply_enu_displacement(const linalg::Vec3 &enu_displacement) const noexcept
+         ND ND_HD inline ECEFCoordinate apply_enu_displacement(const linalg::Vec3 &enu_displacement) const noexcept
          {
             auto frame = local_frame();
             auto target_ecef = frame.origin_ecef + frame.to_ecef(enu_displacement);
@@ -621,7 +638,7 @@ namespace dstl
          /// Example: Fly 100nm NE at constant 30,000ft
          ///   Vec3 horizontal{100*NM_TO_M/sqrt(2), 100*NM_TO_M/sqrt(2), 0};
          ///   auto new_pos = origin.apply_enu_displacement_constant_altitude(horizontal);
-         ND_HD inline ECEFCoordinate apply_enu_displacement_constant_altitude(
+         ND ND_HD inline ECEFCoordinate apply_enu_displacement_constant_altitude(
              const linalg::Vec3 &enu_horizontal,
              double altitude_change_m = 0.0) const noexcept
          {
@@ -642,7 +659,7 @@ namespace dstl
          /// @param enu_horizontal Horizontal displacement in ENU meters (only x and y used)
          /// @param altitude_change_ft Change in altitude (feet), default 0 for constant altitude
          /// @return New WGS84 coordinate with displacement applied and altitude corrected
-         ND_HD inline ECEFCoordinate apply_enu_displacement_constant_altitude_ft(
+         ND ND_HD inline ECEFCoordinate apply_enu_displacement_constant_altitude_ft(
              const linalg::Vec3 &enu_horizontal,
              double altitude_change_ft = 0.0) const noexcept
          {
@@ -664,7 +681,7 @@ namespace dstl
          /// 
          /// Method: Treats Earth+altitude as a sphere, computes great circle displacement
          /// with iterative radius refinement for improved accuracy
-         ND_HD inline ECEFCoordinate apply_enu_displacement_spherical(
+         ND ND_HD inline ECEFCoordinate apply_enu_displacement_spherical(
              const linalg::Vec3 &enu_horizontal,
              double altitude_change_m = 0.0,
              int max_iterations = 10) const noexcept
@@ -742,7 +759,7 @@ namespace dstl
          }
 
          /// Apply flat-earth displacement on a spherical surface (feet version)
-         ND_HD inline ECEFCoordinate apply_enu_displacement_spherical_ft(
+         ND ND_HD inline ECEFCoordinate apply_enu_displacement_spherical_ft(
              const linalg::Vec3 &enu_horizontal,
              double altitude_change_ft = 0.0,
              int max_iterations = 3) const noexcept
@@ -797,25 +814,20 @@ namespace dstl
             double azimuth = bearing_rad;
             double dist_traveled = 0.0;
 
-            // RK4 integration of geodesic equations
+            // RK4 integration of geodesic equations on the ellipsoid
+            // Note: Altitude affects final position but not curvature (alt << a for aircraft)
             for (int i = 0; i < steps; ++i)
             {
                // Current position state
                double clat = std::cos(lat);
                double slat = std::sin(lat);
 
-               // Radius of curvature in meridian and prime vertical
-               double sin2lat = slat * slat;
-               double N = WGS84::a / std::sqrt(1.0 - WGS84::e2 * sin2lat);  // Prime vertical radius
-               double M = WGS84::a * (1.0 - WGS84::e2) / std::pow(1.0 - WGS84::e2 * sin2lat, 1.5);  // Meridian radius
-
-               // Effective radius at current altitude
-               double R_eff = (M + N) / 2.0 + alt;
-
-               // RK4 derivatives for geodesic equations
+               // RK4 derivatives for geodesic equations on ellipsoid:
                // dlat/ds = cos(azimuth) / M
                // dlon/ds = sin(azimuth) / (N * cos(lat))
                // dazimuth/ds = sin(azimuth) * tan(lat) / N
+               // where M = meridian radius, N = prime vertical radius
+               // Note: Altitude is tracked separately; its effect on curvature is negligible (alt << a)
 
                auto derivatives = [&](double az, double lt) {
                   double c_lat = std::cos(lt);
@@ -875,7 +887,7 @@ namespace dstl
          }
 
          /// Move along geodesic with constant altitude (convenience wrapper)
-         ND_HD inline ECEFCoordinate move_geodesic_rk4_constant_altitude(
+         ND ND_HD inline ECEFCoordinate move_geodesic_rk4_constant_altitude(
              double bearing_rad,
              double distance_m,
              int steps = 32) const noexcept
@@ -890,7 +902,7 @@ namespace dstl
          /// @param north_m Northward displacement (meters)
          /// @param steps Number of RK4 steps (default 32)
          /// @return Final position at constant altitude
-         ND_HD inline ECEFCoordinate displace_constant_altitude_rk4(
+         ND ND_HD inline ECEFCoordinate displace_constant_altitude_rk4(
              double east_m,
              double north_m,
              int steps = 32) const noexcept
@@ -915,7 +927,7 @@ namespace dstl
          /// @return Final position at specified altitude
          /// 
          /// Example: auto dest = origin.fly_constant_altitude(90.0, 850.0, 39000.0);
-         ND_HD inline ECEFCoordinate fly_constant_altitude(
+         ND ND_HD inline ECEFCoordinate fly_constant_altitude(
              double track_deg,
              double ground_distance_nm,
              double cruise_altitude_ft,
@@ -981,7 +993,7 @@ namespace dstl
          /// @return New WGS84 coordinate with displacement applied
          /// 
          /// Note: For maintaining constant altitude, use apply_ned_displacement_constant_altitude().
-         ND_HD inline ECEFCoordinate apply_ned_displacement(const linalg::Vec3 &ned_displacement) const noexcept
+         ND ND_HD inline ECEFCoordinate apply_ned_displacement(const linalg::Vec3 &ned_displacement) const noexcept
          {
             auto frame = local_ned_frame();
             auto target_ecef = frame.origin_ecef + frame.to_ecef(ned_displacement);
@@ -998,7 +1010,7 @@ namespace dstl
          /// Example: Fly 100nm North at constant FL350
          ///   Vec3 horizontal{100*NM_TO_M, 0, 0};
          ///   auto new_pos = origin.apply_ned_displacement_constant_altitude(horizontal);
-         ND_HD inline ECEFCoordinate apply_ned_displacement_constant_altitude(
+         ND ND_HD inline ECEFCoordinate apply_ned_displacement_constant_altitude(
              const linalg::Vec3 &ned_horizontal,
              double altitude_change_m = 0.0) const noexcept
          {
@@ -1019,6 +1031,7 @@ namespace dstl
          /// 
          /// @param enu_displacements Vector of displacement segments in ENU
          /// @param update_interval_m Update local frame every N meters of travel (default 50km)
+         ///                          Set to 0 or negative to disable updates (single frame)
          /// @return Final WGS84 coordinate after all displacements
          /// 
          /// Example: Multi-leg flight with frame updates
@@ -1027,10 +1040,21 @@ namespace dstl
          ///       {30000, -20000, -500},  // 30km E, 20km S, descend 500m
          ///   };
          ///   auto final_pos = origin.apply_enu_trajectory(legs);
-         inline ECEFCoordinate apply_enu_trajectory(
+         ND inline ECEFCoordinate apply_enu_trajectory(
              const std::vector<linalg::Vec3> &enu_displacements,
              double update_interval_m = 50000.0) const noexcept
          {
+            // If no frame updates requested, apply all at once
+            if (update_interval_m <= 0.0)
+            {
+               linalg::Vec3 total{0, 0, 0};
+               for (const auto &displacement : enu_displacements)
+               {
+                  total += displacement;
+               }
+               return apply_enu_displacement(total);
+            }
+
             ECEFCoordinate current = *this;
             linalg::Vec3 accumulated{0, 0, 0};
             double accumulated_distance = 0.0;
@@ -1038,8 +1062,8 @@ namespace dstl
             for (const auto &displacement : enu_displacements)
             {
                accumulated += displacement;
-               double segment_distance = std::sqrt(displacement.x * displacement.x +
-                                                   displacement.y * displacement.y);
+               // Include vertical displacement in path length for more accurate tracking
+               double segment_distance = displacement.norm();
                accumulated_distance += segment_distance;
 
                // Update frame if we've traveled far enough
@@ -1062,10 +1086,26 @@ namespace dstl
 
          /// Apply flat-earth trajectory in NED with frame updates
          /// Same as apply_enu_trajectory but for NED coordinates
-         inline ECEFCoordinate apply_ned_trajectory(
+         /// 
+         /// @param ned_displacements Vector of displacement segments in NED
+         /// @param update_interval_m Update local frame every N meters (default 50km)
+         ///                          Set to 0 or negative to disable updates
+         /// @return Final WGS84 coordinate after all displacements
+         ND inline ECEFCoordinate apply_ned_trajectory(
              const std::vector<linalg::Vec3> &ned_displacements,
              double update_interval_m = 50000.0) const noexcept
          {
+            // If no frame updates requested, apply all at once
+            if (update_interval_m <= 0.0)
+            {
+               linalg::Vec3 total{0, 0, 0};
+               for (const auto &displacement : ned_displacements)
+               {
+                  total += displacement;
+               }
+               return apply_ned_displacement(total);
+            }
+
             ECEFCoordinate current = *this;
             linalg::Vec3 accumulated{0, 0, 0};
             double accumulated_distance = 0.0;
@@ -1073,8 +1113,8 @@ namespace dstl
             for (const auto &displacement : ned_displacements)
             {
                accumulated += displacement;
-               double segment_distance = std::sqrt(displacement.x * displacement.x +
-                                                   displacement.y * displacement.y);
+               // Include vertical displacement in path length
+               double segment_distance = displacement.norm();
                accumulated_distance += segment_distance;
 
                // Update frame if we've traveled far enough
@@ -1209,7 +1249,8 @@ namespace dstl
 
          /// Equality comparison (within tolerance)
          /// Uses COORDINATE_EPSILON (1 micron) for floating-point comparison
-         ND_HD constexpr bool operator==(const ECEFCoordinate &other) const noexcept
+         /// Note: Not constexpr in C++17 due to std::abs
+         ND_HD inline bool operator==(const ECEFCoordinate &other) const noexcept
          {
             return std::abs(m_ecef.x - other.m_ecef.x) < COORDINATE_EPSILON &&
                    std::abs(m_ecef.y - other.m_ecef.y) < COORDINATE_EPSILON &&
@@ -1217,13 +1258,13 @@ namespace dstl
          }
 
          /// Inequality comparison
-         ND_HD constexpr bool operator!=(const ECEFCoordinate &other) const noexcept
+         ND_HD inline bool operator!=(const ECEFCoordinate &other) const noexcept
          {
             return !(*this == other);
          }
 
          /// Approximate equality with custom tolerance
-         ND_HD constexpr bool approx_equal(const ECEFCoordinate &other, double tolerance_m = COORDINATE_EPSILON) const noexcept
+         ND_HD inline bool approx_equal(const ECEFCoordinate &other, double tolerance_m = COORDINATE_EPSILON) const noexcept
          {
             return std::abs(m_ecef.x - other.m_ecef.x) < tolerance_m &&
                    std::abs(m_ecef.y - other.m_ecef.y) < tolerance_m &&
@@ -1234,6 +1275,8 @@ namespace dstl
 
          /// Get unit normal vector to ellipsoid surface at this point
          /// Points radially outward from Earth center (not exactly vertical due to ellipsoid shape)
+         /// Note: Returns normalized direction vector (approximately unit length for Earth ellipsoid)
+         /// For a true unit normal, call .normalized() on the result
          /// Useful for: gravity direction, surface projections, ray tracing
          ND_HD inline linalg::Vec3 surface_normal() const noexcept
          {
@@ -1246,7 +1289,7 @@ namespace dstl
          /// Get geodesic midpoint between this point and another
          /// Uses Vincenty's formula for accurate midpoint on ellipsoid
          /// Useful for: path smoothing, interpolation, waypoint generation
-         ND_HD inline ECEFCoordinate midpoint(const ECEFCoordinate &other) const noexcept
+         ND ND_HD inline ECEFCoordinate midpoint(const ECEFCoordinate &other) const noexcept
          {
             // For short distances, simple average works well
             double dist = distance_to(other);
