@@ -19,3 +19,6 @@
 [submodule "Quadrature"]
 	path = Quadrature
 	url = https://github.com/jpsilverberg/Quadrature.git
+[submodule "Geodesy"]
+	path = Geodesy
+	url = https://github.com/jpsilverberg/Geodesy.git
