@@ -34,6 +34,14 @@ namespace dstl
       constexpr double DEG_TO_RAD = PI / 180.0;
       constexpr double RAD_TO_DEG = 180.0 / PI;
       
+      // Unit conversions
+      constexpr double FT_TO_M = 0.3048;           // Feet to meters
+      constexpr double M_TO_FT = 1.0 / 0.3048;     // Meters to feet
+      constexpr double NM_TO_M = 1852.0;           // Nautical miles to meters
+      constexpr double M_TO_NM = 1.0 / 1852.0;     // Meters to nautical miles
+      constexpr double KT_TO_MS = 0.514444;        // Knots to m/s
+      constexpr double MS_TO_KT = 1.0 / 0.514444;  // m/s to knots
+      
       // Numerical tolerances
       constexpr double POLAR_EPSILON = 1e-10;  // For polar axis detection
       constexpr double CONVERGENCE_EPSILON = 1e-12;  // For iterative convergence
@@ -206,6 +214,12 @@ namespace dstl
             return from_geodetic(lat_deg * DEG_TO_RAD, lon_deg * DEG_TO_RAD, alt_m);
          }
 
+         /// Construct from geodetic coordinates in degrees with altitude in feet
+         ND_HD static inline ECEFCoordinate from_geodetic_deg_ft(double lat_deg, double lon_deg, double alt_ft) noexcept
+         {
+            return from_geodetic(lat_deg * DEG_TO_RAD, lon_deg * DEG_TO_RAD, alt_ft * FT_TO_M);
+         }
+
          // ==================== ECEF Access (Fast - No Trig) ====================
 
          /// Get ECEF vector (X, Y, Z)
@@ -241,6 +255,12 @@ namespace dstl
          {
             compute_geodetic();
             return *m_alt;
+         }
+
+         /// Get altitude in feet
+         ND_HD inline double altitude_ft() const noexcept
+         {
+            return altitude() * M_TO_FT;
          }
 
          /// Get latitude in degrees
@@ -614,6 +634,120 @@ namespace dstl
             // Set altitude explicitly
             double target_altitude = altitude() + altitude_change_m;
             return from_geodetic(target.latitude(), target.longitude(), target_altitude);
+         }
+
+         /// Apply flat-earth displacement with constant altitude (feet version)
+         /// Same as apply_enu_displacement_constant_altitude but with altitude in feet
+         /// 
+         /// @param enu_horizontal Horizontal displacement in ENU meters (only x and y used)
+         /// @param altitude_change_ft Change in altitude (feet), default 0 for constant altitude
+         /// @return New WGS84 coordinate with displacement applied and altitude corrected
+         ND_HD inline ECEFCoordinate apply_enu_displacement_constant_altitude_ft(
+             const linalg::Vec3 &enu_horizontal,
+             double altitude_change_ft = 0.0) const noexcept
+         {
+            return apply_enu_displacement_constant_altitude(enu_horizontal, altitude_change_ft * FT_TO_M);
+         }
+
+         /// Apply flat-earth displacement on a spherical surface at constant altitude
+         /// This uses a spherical approximation where the displacement follows a great circle
+         /// on a sphere at the current altitude. More accurate for long distances than the
+         /// flat tangent plane, but still maintains constant altitude.
+         /// 
+         /// Uses iterative refinement: starts with radius at origin, computes endpoint,
+         /// then uses mean radius for better accuracy. Iterates if needed.
+         /// 
+         /// @param enu_horizontal Horizontal displacement in ENU (only x and y used)
+         /// @param altitude_change_m Change in altitude (meters), default 0
+         /// @param max_iterations Maximum iterations for radius refinement (default 3)
+         /// @return New WGS84 coordinate
+         /// 
+         /// Method: Treats Earth+altitude as a sphere, computes great circle displacement
+         /// with iterative radius refinement for improved accuracy
+         ND_HD inline ECEFCoordinate apply_enu_displacement_spherical(
+             const linalg::Vec3 &enu_horizontal,
+             double altitude_change_m = 0.0,
+             int max_iterations = 10) const noexcept
+         {
+            // Compute horizontal distance and bearing
+            double horiz_dist = std::sqrt(enu_horizontal.x * enu_horizontal.x + 
+                                         enu_horizontal.y * enu_horizontal.y);
+            
+            if (horiz_dist < 1e-6)
+            {
+               // No horizontal movement, just altitude change
+               return from_geodetic(latitude(), longitude(), altitude() + altitude_change_m);
+            }
+
+            // Bearing from ENU components (atan2(East, North))
+            double bearing = std::atan2(enu_horizontal.x, enu_horizontal.y);
+
+            // Current position
+            double lat1 = latitude();
+            double lon1 = longitude();
+            double current_alt = altitude();
+            double sl1 = sin_lat();
+            double cl1 = cos_lat();
+
+            // Initial effective radius at starting altitude
+            double effective_radius = WGS84::a + current_alt;
+            ECEFCoordinate result;
+            
+            // Iterative refinement using mean radius
+            for (int iter = 0; iter < max_iterations; ++iter)
+            {
+               // Angular distance on sphere at this effective radius
+               double angular_dist = horiz_dist / effective_radius;
+
+               // Spherical displacement formulas
+               double sin_bearing = std::sin(bearing);
+               double cos_bearing = std::cos(bearing);
+               double sin_angular = std::sin(angular_dist);
+               double cos_angular = std::cos(angular_dist);
+
+               // New latitude
+               double lat2 = std::asin(sl1 * cos_angular + cl1 * sin_angular * cos_bearing);
+
+               // New longitude
+               double lon2 = lon1 + std::atan2(sin_bearing * sin_angular * cl1,
+                                              cos_angular - sl1 * std::sin(lat2));
+
+               // New altitude
+               double alt2 = current_alt + altitude_change_m;
+
+               result = from_geodetic(lat2, lon2, alt2);
+
+               // Check if we need another iteration
+               if (iter < max_iterations - 1)
+               {
+                  // Compute mean radius between start and end
+                  double end_alt = result.altitude();
+                  double mean_radius = WGS84::a + (current_alt + end_alt) / 2.0;
+                  
+                  // Check relative error in radius
+                  double radius_error = std::abs(mean_radius - effective_radius) / effective_radius;
+                  
+                  // If error is small enough, we're done
+                  if (radius_error < 1e-6)  // 0.0001% tolerance
+                  {
+                     break;
+                  }
+                  
+                  // Update radius for next iteration
+                  effective_radius = mean_radius;
+               }
+            }
+
+            return result;
+         }
+
+         /// Apply flat-earth displacement on a spherical surface (feet version)
+         ND_HD inline ECEFCoordinate apply_enu_displacement_spherical_ft(
+             const linalg::Vec3 &enu_horizontal,
+             double altitude_change_ft = 0.0,
+             int max_iterations = 3) const noexcept
+         {
+            return apply_enu_displacement_spherical(enu_horizontal, altitude_change_ft * FT_TO_M, max_iterations);
          }
 
          /// Apply flat-earth displacement in NED coordinates
