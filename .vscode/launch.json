@@ -7,7 +7,7 @@
         {
             "name": "(gdb) Launch",
             "type": "cppdbg",
-            "visualizerFile": "${workspaceFolder}/DPools.natvis",
+            "visualizerFile": "${workspaceFolder}/src/DSTL/DataPools/Debug/dstl.natvis",
             "showDisplayString": true,
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/DPoolTests",
