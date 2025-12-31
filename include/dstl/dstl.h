@@ -7,3 +7,4 @@
 #include "dlog.h"
 #include "dpools.h"
 #include "dmutex.h"
+#include "StringUtils.h"

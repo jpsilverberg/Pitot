@@ -56,6 +56,7 @@ set(DSTL_COMPONENT_DIRS
   LinAlg
   Quadrature
   Geodesy
+  StringUtils
   DGSTFEM
 )
 
@@ -83,6 +84,7 @@ set(DSTL_INTERFACE_LINK_TARGETS
   dstl::linalg
   dstl::quadrature
   dstl::Geodesy
+  dstl::stringutils
   dstl::dg0
 )
 
