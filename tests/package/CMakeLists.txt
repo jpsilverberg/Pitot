@@ -4,11 +4,14 @@ project(dstl_package_smoke LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(DSTL CONFIG REQUIRED COMPONENTS dmutex dlog)
+find_package(DSTL CONFIG REQUIRED COMPONENTS dmutex dlog numbers quadrature)
 
 add_executable(dstl_package_smoke main.cpp)
 target_link_libraries(dstl_package_smoke
   PRIVATE
+    dstl::dstl
     dstl::dmutex
     dstl::dlog
+    dstl::numbers
+    dstl::quadrature
 )
