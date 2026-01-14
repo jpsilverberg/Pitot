@@ -20,6 +20,8 @@
 #include <cmath>
 #include <limits>
 
+namespace dstl
+{
 namespace pitot
 {
 //==========================================================================
@@ -1267,3 +1269,7 @@ inline Real h_geom_from_h_geopot(Real h_ft) noexcept
 #undef PITOT_LIKELY
 #undef PITOT_UNLIKELY
 }  // namespace pitot
+}  // namespace dstl
+
+// Backward compatibility alias
+namespace pitot = dstl::pitot;

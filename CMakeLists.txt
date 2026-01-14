@@ -62,7 +62,7 @@ set(DSTL_COMPONENT_DIRS
   Geodesy
   StringUtils
   DGSTFEM
-  pitot
+  Pitot
 
 )
 
@@ -92,7 +92,7 @@ set(DSTL_INTERFACE_LINK_TARGETS
   dstl::Geodesy
   dstl::stringutils
   dstl::dg0
-  dstl::pitot
+  dstl::Pitot
 
 )
 
