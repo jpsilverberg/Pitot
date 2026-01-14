@@ -3,4 +3,4 @@
 // DSTL Logging Library
 // This header provides access to the DSTL logging functionality
 
-#include "../../Logger/include/dstl/DLog.h"
+#include "../../Logger/include/dstl/Logger.h"

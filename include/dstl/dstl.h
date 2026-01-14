@@ -4,8 +4,8 @@
 // Master header that includes all DSTL components
 
 // Logging
+#include "DataPools.h"
+#include "Logger.h"
+#include "Mutex.h"
+#include "Pitot.h"
 #include "StringUtils.h"
-#include "dlog.h"
-#include "dmutex.h"
-#include "dpools.h"
-#include "pitot.h"

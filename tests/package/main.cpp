@@ -1,5 +1,5 @@
 #include <dstl/BitFlag.h>
-#include <dstl/DLog.h>
+#include <dstl/Logger.h>
 #include <dstl/Mutex.h>
 #include <dstl/Numbers.h>
 #include <dstl/Quadrature.h>

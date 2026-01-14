@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 #include <thread>
 
-#include <dstl/dlog.h>
+#include <dstl/Logger.h>
 #define ISNEAR(a, b) \
 VARSEQ(a,b);               \
 ASSERT_NEAR(static_cast<double>(a), static_cast<double>(b), 1.e-6)
