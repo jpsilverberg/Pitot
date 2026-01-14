@@ -1,0 +1,114 @@
+# Build directories
+build/
+build-*/
+Debug/
+Release/
+deps/*/CMakeFiles/
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CPackConfig.cmake
+CPackSourceConfig.cmake
+CTestTestfile.cmake
+DartConfiguration.tcl
+Makefile
+compile_commands.json
+*_include.cmake
+
+# IDE and editor files
+.vscode/
+.cache/
+.continue/
+.kiro/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+DLogTests_output.log
+build_warnings.log
+fresh_build_warnings.log
+
+# Test and coverage files
+Testing/
+coverage/
+*.gcov
+*.gcda
+*.gcno
+*.info
+
+# Documentation output
+doxyout/
+doxygen/
+docs/html/
+docs/latex/
+Doc/
+
+# Temporary and backup files
+*.tmp
+*.temp
+*.bak
+*.orig
+*~
+.#*
+#*#
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+a.out
+DCode
+dcode
+
+# Debug information files
+*.dwo
+
+# Secret files
+.secrets
+.env
+.env.local
+
+# Analysis and quality tools output
+cppcheck-output/
+sonar-output/
+*.sarif
+
+# Docker files (development)
+Dockerfile.dev
+
+# CI/CD files
+.actrc

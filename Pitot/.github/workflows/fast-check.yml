@@ -1,0 +1,52 @@
+name: Fast Quality Check
+
+on:
+  push:
+    branches: [ develop, 'feature/*', 'bugfix/*' ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  # Minimal fast checks for feature branches
+  fast-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        token: ${{ secrets.SUBMODULE_TOKEN }}
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake clang-format-14 cppcheck
+
+    - name: Check code formatting
+      run: |
+        find include Tests -name "*.cpp" -o -name "*.cxx" -o -name "*.h" -o -name "*.hpp" | \
+        xargs clang-format-14 --dry-run --Werror
+
+    - name: Quick cppcheck
+      run: |
+        cppcheck \
+          --enable=error,warning \
+          --std=c++17 \
+          --quiet \
+          --error-exitcode=1 \
+          --suppress=missingIncludeSystem \
+          -I include \
+          include Tests
+
+    - name: Quick build test
+      run: |
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_TESTING=ON \
+          -G "Unix Makefiles"
+        cmake --build build --parallel
+
+    - name: Quick test run
+      working-directory: build
+      run: |
+        # Run only core tests, skip performance tests
+        ctest --exclude-regex "PerformanceTest" --timeout 60 --output-on-failure

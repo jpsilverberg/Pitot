@@ -6,7 +6,11 @@ project(DSTL VERSION 1.0.0 LANGUAGES CXX)
 
 # Project-wide build knobs so every component shares the same defaults.
 set(DSTL_CXX_STANDARD 17 CACHE STRING "C++ standard used when building DSTL")
-set_property(CACHE DSTL_CXX_STANDARD PROPERTY STRINGS 14 17 20 23)
+set_property(CACHE DSTL_CXX_STANDARD PROPERTY STRINGS 17 20 23)
+
+if(DSTL_CXX_STANDARD LESS 17)
+  message(FATAL_ERROR "DSTL requires C++17 or newer. C++${DSTL_CXX_STANDARD} is not supported.")
+endif()
 
 option(DSTL_ENABLE_WARNINGS "Enable common warning flags for every DSTL target" ON)
 option(DSTL_ENABLE_ASAN "Propagate AddressSanitizer to DSTL components that support it" OFF)
@@ -58,6 +62,8 @@ set(DSTL_COMPONENT_DIRS
   Geodesy
   StringUtils
   DGSTFEM
+  pitot
+
 )
 
 # Ensure downstream options match the root defaults before adding subdirectories.
@@ -86,6 +92,8 @@ set(DSTL_INTERFACE_LINK_TARGETS
   dstl::Geodesy
   dstl::stringutils
   dstl::dg0
+  dstl::pitot
+
 )
 
 foreach(dep ${DSTL_INTERFACE_LINK_TARGETS})
