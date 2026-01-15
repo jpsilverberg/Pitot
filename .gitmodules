@@ -25,3 +25,9 @@
 [submodule "StringUtils"]
 	path = StringUtils
 	url = https://github.com/jpsilverberg/StringUtils.git
+[submodule "Filer"]
+	path = Filer
+	url = https://github.com/jpsilverberg/Filer.git
+[submodule "Lab"]
+	path = Lab
+	url = https://github.com/jpsilverberg/Lab.git
