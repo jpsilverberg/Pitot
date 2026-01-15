@@ -42,7 +42,7 @@ include(GNUInstallDirs)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -55,7 +55,7 @@ target_include_directories(dstl_${lower_name}
     \$<INSTALL_INTERFACE:include>
 )
 
-target_compile_features(dstl_${lower_name} INTERFACE cxx_std_14)
+target_compile_features(dstl_${lower_name} INTERFACE cxx_std_17)
 
 set_target_properties(dstl_${lower_name} PROPERTIES EXPORT_NAME ${lower_name})
 

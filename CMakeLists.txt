@@ -63,7 +63,8 @@ set(DSTL_COMPONENT_DIRS
   StringUtils
   DGSTFEM
   Pitot
-
+  Lab
+  Filer
 )
 
 # Ensure downstream options match the root defaults before adding subdirectories.
@@ -93,6 +94,8 @@ set(DSTL_INTERFACE_LINK_TARGETS
   dstl::stringutils
   dstl::dg0
   dstl::Pitot
+  dstl::lab
+  dstl::filer
 
 )
 
@@ -127,6 +130,14 @@ install(DIRECTORY Logger
 )
 
 install(DIRECTORY Mutex
+  DESTINATION .
+  PATTERN "Tests" EXCLUDE
+  PATTERN "build" EXCLUDE
+  PATTERN ".git" EXCLUDE
+  PATTERN "CMakeLists.txt" EXCLUDE
+)
+
+install(DIRECTORY Lab
   DESTINATION .
   PATTERN "Tests" EXCLUDE
   PATTERN "build" EXCLUDE
