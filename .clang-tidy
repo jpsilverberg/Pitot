@@ -1,1 +1,0 @@
-Checks: 'clang-diagnostic-*,clang-analyzer-*,bugprone-*,performance-*,readability-*,-readability-identifier-length,-readability-else-after-return'
