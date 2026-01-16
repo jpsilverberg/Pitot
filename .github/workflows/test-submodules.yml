@@ -1,0 +1,79 @@
+name: Test Submodules Access
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  test-submodules:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Test PAT access to submodules
+      run: |
+        echo "Testing access to private submodule repositories..."
+        
+        # Test access to Mutex repo
+        echo "Testing Mutex repository access..."
+        if curl -H "Authorization: token ${{ secrets.SUBMODULE_TOKEN }}" \
+                -s -o /dev/null -w "%{http_code}" \
+                https://api.github.com/repos/jpsilverberg/Mutex | grep -q "200"; then
+          echo "✅ PAT has access to Mutex repository"
+        else
+          echo "❌ PAT does NOT have access to Mutex repository"
+          echo "HTTP response code:"
+          curl -H "Authorization: token ${{ secrets.SUBMODULE_TOKEN }}" \
+               -s -o /dev/null -w "%{http_code}" \
+               https://api.github.com/repos/jpsilverberg/Mutex
+        fi
+        
+        # Test access to Logger repo  
+        echo "Testing Logger repository access..."
+        if curl -H "Authorization: token ${{ secrets.SUBMODULE_TOKEN }}" \
+                -s -o /dev/null -w "%{http_code}" \
+                https://api.github.com/repos/jpsilverberg/Logger | grep -q "200"; then
+          echo "✅ PAT has access to Logger repository"
+        else
+          echo "❌ PAT does NOT have access to Logger repository"
+          echo "HTTP response code:"
+          curl -H "Authorization: token ${{ secrets.SUBMODULE_TOKEN }}" \
+               -s -o /dev/null -w "%{http_code}" \
+               https://api.github.com/repos/jpsilverberg/Logger
+        fi
+
+    - name: Test checkout with submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        token: ${{ secrets.SUBMODULE_TOKEN }}
+
+    - name: Verify submodules were checked out
+      run: |
+        echo "Checking if submodules were checked out..."
+        echo "Git submodule status:"
+        git submodule status || echo "git submodule status failed"
+        
+        echo "Directory listing:"
+        ls -la deps/ || echo "deps directory not found"
+        
+        if [ -d "deps/Mutex" ] && [ -f "deps/Mutex/CMakeLists.txt" ]; then
+          echo "✅ Mutex submodule successfully checked out"
+          echo "Mutex files:"
+          ls -la deps/Mutex/
+        else
+          echo "❌ Mutex submodule missing or incomplete"
+        fi
+        
+        if [ -d "deps/Logger" ] && [ -f "deps/Logger/CMakeLists.txt" ]; then
+          echo "✅ Logger submodule successfully checked out"
+          echo "Logger files:"
+          ls -la deps/Logger/
+        else
+          echo "❌ Logger submodule missing or incomplete"
+        fi
+
+    - name: Test CMake configuration
+      run: |
+        echo "Testing CMake configuration with submodules..."
+        cmake -B test-build \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DBUILD_TESTING=OFF \
+          -G "Unix Makefiles" || echo "CMake configuration failed"
